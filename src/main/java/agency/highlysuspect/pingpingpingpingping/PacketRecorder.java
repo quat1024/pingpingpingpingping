@@ -4,6 +4,8 @@ import net.minecraft.network.protocol.Packet;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
@@ -15,6 +17,11 @@ import java.util.stream.Collectors;
 //TODO: regular HashMap with synchronization would probably be better
 //Or, like,, theres only one packet thread, right
 public class PacketRecorder {
+	public PacketRecorder() {
+		this.start = Instant.now();
+	}
+	
+	private final Instant start;
 	private final ConcurrentHashMap<String, Data> dataByName = new ConcurrentHashMap<>();
 	private final AtomicInteger recvCount = new AtomicInteger(0);
 	
@@ -29,9 +36,35 @@ public class PacketRecorder {
 		dataByName.computeIfAbsent(name, Data::new).record(packet, ex);
 	}
 	
-	public void print(Consumer<String> out) {
-		out.accept(recvCount.get() + " total packets");
-		dataByName.values().stream().sorted().forEach(d -> d.print(out));
+	public int getRecvCount() {
+		return recvCount.get();
+	}
+	
+	public Instant getStart() {
+		return start;
+	}
+	
+	public void printReport(Consumer<String> out) {
+		Instant end = Instant.now();
+		Duration length = Duration.between(start, end);
+		long seconds = length.toSeconds();
+		
+		int recvCount = this.recvCount.get();
+		
+		out.accept("PingPingPingPingPing packet report");
+		out.accept("----------------------------------");
+		out.accept("");
+		out.accept("Capture start:  " + start);
+		out.accept("Capture end:    " + end);
+		out.accept("Capture length: " + length + " (" + seconds + " seconds)");
+		out.accept("");
+		out.accept("Total packets: " + recvCount);
+		out.accept("Packets/sec:   " + PingPingPingPingPing.formatPacketsPerSecond(recvCount, seconds));
+		out.accept("");
+		out.accept("Packet breakdown");
+		out.accept("----------------");
+		out.accept("");
+		dataByName.values().stream().sorted().forEach(d -> d.breakdown(out));
 	}
 	
 	public static class Data implements Comparable<Data> {
@@ -56,7 +89,7 @@ public class PacketRecorder {
 			return Integer.compare(o.recvCount, recvCount); //reversed
 		}
 		
-		public void print(Consumer<String> out) {
+		public void breakdown(Consumer<String> out) {
 			out.accept(recvCount + "x " + name);
 			
 			seenDatas.entrySet().stream()
