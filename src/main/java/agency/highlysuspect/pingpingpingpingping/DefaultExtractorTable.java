@@ -83,7 +83,7 @@ public class DefaultExtractorTable {
 		});
 	}
 	
-	private static <T extends Packet<?>> void mkDecorate(Class<T> classs, BiConsumer<T, Map<String, String>> decorator) {
+	public static <T extends Packet<?>> void mkDecorate(Class<T> classs, BiConsumer<T, Map<String, String>> decorator) {
 		TABLE.put(classs, new Extractor() {
 			@Override
 			public void ping5$decorate(Object self, Map<String, String> data) {
@@ -93,7 +93,7 @@ public class DefaultExtractorTable {
 	}
 	
 	//TODO: doesn't seem to be reliable pre-JOIN
-	private static Level tryToGetLevel() {
+	public static Level tryToGetLevel() {
 		MultiPlayerGameMode gm = Minecraft.getInstance().gameMode;
 		if(gm == null) return null;
 		
@@ -103,7 +103,7 @@ public class DefaultExtractorTable {
 		return pl.getLevel();
 	}
 	
-	private static String entityId(Function<Level, Entity> getter) {
+	public static String entityId(Function<Level, Entity> getter) {
 		Level l = tryToGetLevel();
 		if(l == null) return "<no level>";
 		
@@ -113,7 +113,7 @@ public class DefaultExtractorTable {
 		return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
 	}
 	
-	private static String entityId2(int id) {
+	public static String entityId2(int id) {
 		Level l = tryToGetLevel();
 		if(l == null) return "<no level>";
 		
@@ -123,7 +123,7 @@ public class DefaultExtractorTable {
 		return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
 	}
 	
-	private static String type(BlockEntityType<?> t) {
+	public static String type(BlockEntityType<?> t) {
 		ResourceLocation rl = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(t);
 		if(rl == null) return "<unregistered>";
 		else return rl.toString();
