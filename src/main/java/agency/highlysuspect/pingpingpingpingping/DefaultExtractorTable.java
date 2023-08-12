@@ -15,12 +15,14 @@ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -38,6 +40,19 @@ public class DefaultExtractorTable {
 			public @Nullable String ping5$name(Object self) {
 				return "ClientboundCustomPayloadPacket " + ((ClientboundCustomPayloadPacket) self).getIdentifier();
 			}
+			
+			@Override
+			public void ping5$decorate(Object self, Map<String, String> data) {
+				Extractor next = DefaultCustomPayloadExtractorTable.TABLE.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
+				if(next != null) next.ping5$decorate(self, data);
+			}
+			
+			@Override
+			public @Nullable Vec3 ping5$extractPos(Object self) {
+				Extractor next = DefaultCustomPayloadExtractorTable.TABLE.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
+				if(next != null) return next.ping5$extractPos(self);
+				else return null;
+			}
 		});
 		
 		//block updates
@@ -50,7 +65,7 @@ public class DefaultExtractorTable {
 		mkDecorate(ClientboundBlockDestructionPacket.class, (p, data) -> data.put("pos", p.getPos().toShortString()));
 		
 		//entity stuff
-		//TODO: accessors to get the raw entity ID
+		//TODO: show the position (maybe rounded so it doesn't break collation too much)
 		mkDecorate(ClientboundMoveEntityPacket.Pos.class   , (p, data) -> data.put("type", entityId(p::getEntity)));
 		mkDecorate(ClientboundMoveEntityPacket.PosRot.class, (p, data) -> data.put("type", entityId(p::getEntity)));
 		mkDecorate(ClientboundMoveEntityPacket.Rot.class   , (p, data) -> data.put("type", entityId(p::getEntity)));
@@ -58,6 +73,7 @@ public class DefaultExtractorTable {
 		mkDecorate(ClientboundRotateHeadPacket.class       , (p, data) -> data.put("type", entityId(p::getEntity)));
 		mkDecorate(ClientboundTeleportEntityPacket.class   , (p, data) -> data.put("type", entityId2(p.getId())));
 		mkDecorate(ClientboundSetEntityDataPacket.class    , (p, data) -> data.put("type", entityId2(p.id())));
+		mkDecorate(ClientboundSetEntityMotionPacket.class  , (p, data) -> data.put("type", entityId2(p.getId())));
 		
 		//misc
 		mkDecorate(ClientboundSoundPacket.class, (p, data) -> {

@@ -6,7 +6,9 @@ Packet spam debugger.
 
 Log in, do some stuff, log out. PingPingPingPingPing will keep track of the packets you received and print a report to the log after logging out.
 
-A report is printed during login (any time before `ClientPlayConnectionEvents.JOIN` is fired) containing the packets exchanged during the login/ready process, and another report is printed during disconnection.
+Packets are tracked by class name (vanilla named get reobfuscated to their class name). Some packets have "extractors" that provide additional context for each packet (for an entity update: which entity was updating, e.g.)
+
+A report is printed during login (any time before `ClientPlayConnectionEvents.JOIN` is fired) containing the packets exchanged during the login/ready process, and another report is printed during disconnection. I should really add a client command to start/stop recording and print reports on demand...
 
 ## what does is the networking
 
