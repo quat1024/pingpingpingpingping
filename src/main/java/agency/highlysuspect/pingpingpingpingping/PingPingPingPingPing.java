@@ -72,7 +72,7 @@ public class PingPingPingPingPing implements ClientModInitializer {
 						long seconds = Duration.between(recorder.getStart(), Instant.now()).toSeconds();
 						
 						send(src, "Captured \u00a77" + packets + "\u00a7r packets over \u00a77" + seconds + "\u00a7r seconds.");
-						send(src, "That's \u00a77" + formatPacketsPerSecond(packets, seconds) + "\u00a7r packets/sec.");
+						send(src, "That's about \u00a77" + formatPacketsPerSecond(packets, seconds) + "\u00a7r packets/sec.");
 					}
 					return 0;
 				}));

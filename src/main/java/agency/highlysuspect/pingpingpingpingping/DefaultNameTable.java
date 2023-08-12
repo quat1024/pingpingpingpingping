@@ -142,7 +142,7 @@ public class DefaultNameTable {
 //		TABLE.put(ClientboundBossEventPacket.UpdateProgressOperation.class, "ClientboundBossEventPacket");
 //		TABLE.put(ClientboundBossEventPacket.UpdatePropertiesOperation.class, "ClientboundBossEventPacket");
 //		TABLE.put(ClientboundBossEventPacket.UpdateStyleOperation.class, "ClientboundBossEventPacket");
-		TABLE.put(ClientboundBundlePacket.class, "ClientboundBundlePacket");
+		TABLE.put(ClientboundBundlePacket.class, "ClientboundBundlePacket (constituent packets incorporated into stats)");
 		TABLE.put(ClientboundChangeDifficultyPacket.class, "ClientboundChangeDifficultyPacket");
 		TABLE.put(ClientboundChunksBiomesPacket.ChunkBiomeData.class, "ClientboundChunksBiomesPacket.ChunkBiomeData");
 		TABLE.put(ClientboundChunksBiomesPacket.class, "ClientboundChunksBiomesPacket");

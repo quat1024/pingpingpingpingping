@@ -10,8 +10,8 @@ Packets are tracked by class name (vanilla names get reobfuscated to their mojan
 
 ## Wishlist
 
-* Track outgoing packets
-* Server-side version, to track incoming packets
+* Track outgoing c2s packets
+* Server-side version, to track incoming c2s packets and maybe attribute them to players
 
 ## what does is the networking
 
