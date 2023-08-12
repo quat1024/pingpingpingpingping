@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "agency.highlysuspect.pingpingpingpingping.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"ConnectionMixin",
+		"ClientboundSectionBlocksUpdatePacketMixin",
+		"MultiPlayerGameModeAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"refmap": "packages.refmap.json"
+}

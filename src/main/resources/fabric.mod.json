@@ -1,0 +1,26 @@
+{
+	"schemaVersion": 1,
+	"id": "pingpingpingpingping",
+	"version": "${version}",
+	"name": "PingPingPingPingPing",
+	"description": "Packet spam debugger",
+	"authors": [
+		"quaternary"
+	],
+	"contact": {
+		"homepage": "https://highlysuspect.agency"
+	},
+	"license": "LGPL-3.0-or-later",
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"agency.highlysuspect.pingpingpingpingping.PingPingPingPingPing"
+		]
+	},
+	"mixins": [
+		"pingpingpingpingping.mixins.json"
+	],
+	"depends": {
+		"minecraft": "1.20.1"
+	}
+}
