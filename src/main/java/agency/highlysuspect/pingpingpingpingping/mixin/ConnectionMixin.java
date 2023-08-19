@@ -17,8 +17,11 @@ public abstract class ConnectionMixin {
 	
 	@Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"))
 	private void pingpingpingpingping$onPacket(ChannelHandlerContext bla, Packet<?> packet, CallbackInfo ci) {
-		if(!PingPingPingPingPing.CAPTURING) return;
+		if(!PingPingPingPingPing.CAPTURING || getReceiving() != PacketFlow.CLIENTBOUND) return;
 		
-		PingPingPingPingPing.recorder.record(packet, getReceiving());
+		Integer size = PingPingPingPingPing.PACKET_SIZES.getIfPresent(packet);
+		if(size == null) size = 0;
+		
+		PingPingPingPingPing.recorder.record(packet, getReceiving(), size);
 	}
 }

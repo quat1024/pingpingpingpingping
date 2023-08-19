@@ -1,5 +1,7 @@
 package agency.highlysuspect.pingpingpingpingping;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -10,6 +12,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class PingPingPingPingPing implements ClientModInitializer {
@@ -29,6 +33,14 @@ public class PingPingPingPingPing implements ClientModInitializer {
 	
 	//this field is read *very* often but doesnt change a lot. hmm
 	public static boolean CAPTURING = false;
+	
+	//awkward situation: Packet is an interface and not a concrete class, so I can't slap a "size" field on it
+	//and packets do not go down the pipeline one-at-a-time in order
+	public static final Cache<Packet<?>, Integer> PACKET_SIZES = CacheBuilder.newBuilder()
+		.weakKeys()
+		.concurrencyLevel(10)
+		.expireAfterWrite(5, TimeUnit.SECONDS)
+		.build();
 	
 	public static volatile PacketRecorder recorder = new PacketRecorder();
 	
@@ -41,7 +53,7 @@ public class PingPingPingPingPing implements ClientModInitializer {
 					startCapturing();
 					
 					send(src, "Cleared capture buffer, started capturing packets.");
-					send(src, "Finish and save report with \u00a77/pingpingpingpingping stop\u00a7r.");
+					send(src, "Finish and save report with §7/pingpingpingpingping stop§r.");
 					return 0;
 				}))
 				.then(ClientCommandManager.literal("stop").executes(src -> {
@@ -57,20 +69,20 @@ public class PingPingPingPingPing implements ClientModInitializer {
 				}))
 				.then(ClientCommandManager.literal("info").executes(src -> {
 					if(CAPTURING) {
+						PacketRecorder recorder = PingPingPingPingPing.recorder;
+						
 						long seconds = Duration.between(recorder.getStart(), Instant.now()).toSeconds();
 						
-						send(src, "Capturing packets for " + seconds + " seconds.");
-						send(src, "Use \u00a77/pingpingpingpingping stop\u00a7r to finish and save report.");
+						send(src, "Capturing packets for §7%d§r seconds.".formatted(seconds));
+						send(src, "Use §7/pingpingpingpingping stop§r to finish and save report.");
 						
-						if(recorder != null) {
-							int recv = recorder.getReceivedCount();
-							send(src, "Received \u00a77" + recv + "\u00a7r packets (\u00a77" + formatPacketsPerSecond(recv, seconds) + "\u00a7r per second)");
-							
-							int sent = recorder.getSentCount();
-							send(src, "Sent \u00a77" + sent + "\u00a7r packets (\u00a77" + formatPacketsPerSecond(sent, seconds) + "\u00a7r per second)");
-						}
+						int recv = recorder.getReceivedCount();
+						send(src, "Received §7%d§r packets (§7%s§r/s, §7%s§r)".formatted(recv, formatPerSecond(recv, seconds), formatBytes(recorder.getReceivedSize())));
+						
+						int sent = recorder.getSentCount();
+						send(src, "Sent §7%d§r packets (§7%s§r/s, §7%s§r)".formatted(sent, formatPerSecond(sent, seconds), formatBytes(recorder.getSentSize())));
 					} else {
-						send(src, "Not capturing packets. Use \u00a77/pingpingpingpingping start\u00a7r to begin.");
+						send(src, "Not capturing packets. Use §7/pingpingpingpingping start§r to begin.");
 					}
 					
 					return 0;
@@ -122,8 +134,30 @@ public class PingPingPingPingPing implements ClientModInitializer {
 		return p;
 	}
 	
-	public static String formatPacketsPerSecond(int packets, long seconds) {
+	public static String formatPerSecond(int packets, long seconds) {
 		if(seconds < 1) seconds = 1;
 		return "%.3f".formatted((double) packets / seconds);
+	}
+	
+	//proguarded
+	private static final int a = 1024;
+	private static final int b = 1024 * 1024;
+	private static final int c = 1024 * 1024 * 1024;
+	
+	public static String formatBytes(double bytes) {
+		if(bytes < a) {
+			return ((int) bytes) + " b";
+		} else if(bytes < b) {
+			return "%.3f".formatted(bytes / a) + " KiB";
+		} else if(bytes < c) {
+			return "%.3f".formatted(bytes / b) + " MiB";
+		} else {
+			return "%.3f".formatted(bytes / c) + " GiB"; //god i hope not
+		}
+	}
+	
+	public static String formatBytesPerSecond(int bytes, long seconds) {
+		if(seconds < 1) seconds = 1;
+		return formatBytes((double) bytes / seconds);
 	}
 }

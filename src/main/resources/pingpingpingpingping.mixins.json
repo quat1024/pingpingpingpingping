@@ -6,7 +6,9 @@
 		"ConnectionMixin",
 		"ClientPacketListenerMixin",
 		"ClientboundSectionBlocksUpdatePacketMixin",
-		"MultiPlayerGameModeAccessor"
+		"MultiPlayerGameModeAccessor",
+		"PacketDecoderMixin",
+		"PacketEncoderMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -23,28 +23,39 @@ public class PacketRecorder {
 	private final Instant start;
 	private final ConcurrentHashMap<String, Data> receivedData = new ConcurrentHashMap<>();
 	private final AtomicInteger receivedCount = new AtomicInteger(0);
+	private final AtomicInteger receivedSize = new AtomicInteger(0);
 	
 	private final ConcurrentHashMap<String, Data> sentData = new ConcurrentHashMap<>();
 	private final AtomicInteger sentCount = new AtomicInteger(0);
+	private final AtomicInteger sentSize = new AtomicInteger(0);
 	
-	public void record(Packet<?> packet, PacketFlow direction) {
-		if(direction == PacketFlow.CLIENTBOUND) receivedCount.incrementAndGet();
-		else sentCount.incrementAndGet();
+	public void record(Packet<?> packet, PacketFlow direction, int size) {
+		(direction == PacketFlow.CLIENTBOUND ? receivedCount : sentCount).incrementAndGet();
+		(direction == PacketFlow.CLIENTBOUND ? receivedSize : sentSize).addAndGet(size);
 		
 		Extractor ex = Extractor.get(packet);
 		
 		String name = ex.ping5$name(packet);
 		if(name == null) name = packet.getClass().getName();
 		
-		(direction == PacketFlow.CLIENTBOUND ? receivedData : sentData).computeIfAbsent(name, Data::new).record(packet, ex);
+		(direction == PacketFlow.CLIENTBOUND ? receivedData : sentData)
+			.computeIfAbsent(name, Data::new).record(packet, ex, size);
 	}
 	
 	public int getReceivedCount() {
-		return receivedCount.get();
+		return receivedCount.getAcquire();
+	}
+	
+	public int getReceivedSize() {
+		return receivedSize.getAcquire();
 	}
 	
 	public int getSentCount() {
-		return sentCount.get();
+		return sentCount.getAcquire();
+	}
+	
+	public int getSentSize() {
+		return sentSize.getAcquire();
 	}
 	
 	public Instant getStart() {
@@ -57,7 +68,9 @@ public class PacketRecorder {
 		long seconds = length.toSeconds();
 		
 		int recvCount = this.receivedCount.get();
+		int recvSize = this.receivedSize.get();
 		int sentCount = this.sentCount.get();
+		int sentSize = this.sentSize.get();
 		
 		out.accept("PingPingPingPingPing packet report");
 		out.accept("----------------------------------");
@@ -67,7 +80,9 @@ public class PacketRecorder {
 		out.accept("Capture length: " + length + " (" + seconds + " seconds)");
 		out.accept("");
 		out.accept("Total received packets: " + recvCount);
-		out.accept("Received packets/sec:   " + PingPingPingPingPing.formatPacketsPerSecond(recvCount, seconds));
+		out.accept("Received packets/sec:   " + PingPingPingPingPing.formatPerSecond(recvCount, seconds));
+		out.accept("Total received size:    " + PingPingPingPingPing.formatBytes(recvSize));
+		out.accept("Received size/sec:      " + PingPingPingPingPing.formatBytesPerSecond(recvSize, seconds));
 		
 		int maxDetail = receivedData.values().stream().map(Data::maxDetail).max(Integer::compareTo).orElse(0);
 		for(int det = 0; det <= maxDetail; det++) {
@@ -80,8 +95,12 @@ public class PacketRecorder {
 		}
 		
 		out.accept("");
+		out.accept("============");
+		out.accept("");
 		out.accept("Total sent packets: " + sentCount);
-		out.accept("Sent packets/sec:   " + PingPingPingPingPing.formatPacketsPerSecond(sentCount, seconds));
+		out.accept("Sent packets/sec:   " + PingPingPingPingPing.formatPerSecond(sentCount, seconds));
+		out.accept("Total sent size:    " + PingPingPingPingPing.formatBytes(sentSize));
+		out.accept("Sent size/sec:      " + PingPingPingPingPing.formatBytesPerSecond(sentSize, seconds));
 		
 		maxDetail = sentData.values().stream().map(Data::maxDetail).max(Integer::compareTo).orElse(0);
 		for(int det = 0; det <= maxDetail; det++) {
@@ -102,23 +121,40 @@ public class PacketRecorder {
 		private final String name;
 		
 		private final AtomicInteger count = new AtomicInteger(0);
+		private final AtomicInteger size = new AtomicInteger(0);
+		private final AtomicInteger unknownSizeCount = new AtomicInteger(0);
 		private final ConcurrentHashMap<DetailSet, AtomicInteger> seenDetails = new ConcurrentHashMap<>();
 		
-		public void record(Object packet, Extractor ex) {
+		public void record(Object packet, Extractor ex, int size) {
 			count.incrementAndGet();
+			
+			this.size.addAndGet(size);
+			if(size == 0) unknownSizeCount.incrementAndGet();
 			
 			DetailSet details = new DetailSet();
 			ex.ping5$fillDetails(packet, details);
 			seenDetails.computeIfAbsent(details, __ -> new AtomicInteger(0)).incrementAndGet();
 		}
 		
+		//comparison is done in reverse
 		@Override
 		public int compareTo(@NotNull PacketRecorder.Data o) {
-			return Integer.compare(o.count.getAcquire(), count.getAcquire()); //reversed
+			int bySize = Integer.compare(o.size.getAcquire(), size.getAcquire());
+			if(bySize != 0) return bySize;
+			else return Integer.compare(o.count.getAcquire(), count.getAcquire());
 		}
 		
 		public void breakdown(Consumer<String> out, int maxLevel) {
-			out.accept(count + "x " + name);
+			int size = this.size.getAcquire();
+			int unknownSizeCount = this.unknownSizeCount.get();
+			
+			StringBuilder oho = new StringBuilder();
+			oho.append(count).append("x ").append(name);
+			
+			if(size > 0) oho.append(" (").append(PingPingPingPingPing.formatBytes(size)).append(')');
+			if(unknownSizeCount > 0) oho.append(" (").append(unknownSizeCount).append(" packets of unknown size)");
+			
+			out.accept(oho.toString());
 			if(maxLevel <= 0) return;
 			
 			//trim details to the desired max level, accumulating frequencies

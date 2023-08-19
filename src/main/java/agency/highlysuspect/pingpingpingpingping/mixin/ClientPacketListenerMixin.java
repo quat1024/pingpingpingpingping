@@ -16,6 +16,6 @@ public class ClientPacketListenerMixin {
 	public void onBundle(ClientboundBundlePacket bundle, CallbackInfo ci) {
 		if(!PingPingPingPingPing.CAPTURING) return;
 		
-		for(Packet<?> p : bundle.subPackets()) PingPingPingPingPing.recorder.record(p, PacketFlow.CLIENTBOUND);
+		for(Packet<?> p : bundle.subPackets()) PingPingPingPingPing.recorder.record(p, PacketFlow.CLIENTBOUND, 0);
 	}
 }
