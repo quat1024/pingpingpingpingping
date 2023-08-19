@@ -62,7 +62,7 @@ public class DefaultExtractorTable {
 			@Override
 			public void ping5$fillDetails(Object self, DetailSet details) {
 				ClientboundBlockEntityDataPacket s = (ClientboundBlockEntityDataPacket) self;
-				details.collect(DetailSet.BLOCK_POS, 1, s.getPos())
+				details.collect(DetailSet.BLOCK_POS, 2, s.getPos())
 					.collect(DetailSet.BLOCK_ENTITY_TYPE, 1, s.getType());
 			}
 		});

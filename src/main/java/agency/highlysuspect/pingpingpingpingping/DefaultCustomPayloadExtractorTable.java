@@ -1,6 +1,8 @@
 package agency.highlysuspect.pingpingpingpingping;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
 
@@ -40,6 +42,17 @@ public class DefaultCustomPayloadExtractorTable {
 		//https://github.com/cc-tweaked/CC-Tweaked/blob/mc-1.19.x/projects/common/src/main/java/dan200/computercraft/shared/network/NetworkMessages.java#L23
 		//https://github.com/cc-tweaked/CC-Tweaked/blob/mc-1.19.x/projects/fabric/src/main/java/dan200/computercraft/shared/platform/NetworkHandler.java#L75
 		peekIncoming(new ResourceLocation("computercraft", "main"), (buf, details) -> details.collect("type", 1, buf.readByte()));
+		
+		//TODO horrible hack while i think about how a better extractor system works
+		peekIncoming(new ResourceLocation("fireblanket", "batched_be_sync"), (buf, details) -> {
+			details.collect("ping5-unbatch", 1, "attempt");
+			if(!PingPingPingPingPing.CAPTURING) return;
+			int count = buf.readVarInt();
+			for(int i = 0; i < count; i++) {
+				PingPingPingPingPing.recorder.record(new ClientboundBlockEntityDataPacket(buf), PacketFlow.CLIENTBOUND, 0);
+			}
+			details.collect("ping5-unbatch", 1, "success");
+		});
 	}
 	
 	private static void peekIncoming(ResourceLocation rl, BiConsumer<FriendlyByteBuf, DetailSet> action) {
