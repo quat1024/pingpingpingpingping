@@ -1,10 +1,6 @@
 package agency.highlysuspect.pingpingpingpingping;
 
-import agency.highlysuspect.pingpingpingpingping.mixin.MultiPlayerGameModeAccessor;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.client.multiplayer.MultiPlayerGameMode;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundBlockDestructionPacket;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -18,17 +14,15 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class DefaultExtractorTable {
 	public static final Map<Class<?>, Extractor> TABLE = new HashMap<>();
@@ -42,90 +36,72 @@ public class DefaultExtractorTable {
 			}
 			
 			@Override
-			public void ping5$decorate(Object self, Map<String, String> data) {
+			public void ping5$fillDetails(Object self, DetailSet details) {
 				Extractor next = DefaultCustomPayloadExtractorTable.TABLE.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
-				if(next != null) next.ping5$decorate(self, data);
-			}
-			
-			@Override
-			public @Nullable Vec3 ping5$extractPos(Object self) {
-				Extractor next = DefaultCustomPayloadExtractorTable.TABLE.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
-				if(next != null) return next.ping5$extractPos(self);
-				else return null;
+				if(next != null) next.ping5$fillDetails(self, details);
 			}
 		});
 		
-		//block updates
-		mkDecorate(ClientboundBlockUpdatePacket.class, (p, data) -> data.put("pos", p.getPos().toShortString()));
-		mkDecorate(ClientboundBlockEventPacket.class, (p, data) -> data.put("pos", p.getPos().toShortString()));
-		mkDecorate(ClientboundBlockEntityDataPacket.class, (p, data) -> {
-			data.put("pos", p.getPos().toShortString());
-			data.put("be", type(p.getType()));
+		blockpos(ClientboundBlockUpdatePacket.class, 1, ClientboundBlockUpdatePacket::getPos);
+		blockpos(ClientboundBlockEventPacket.class, 1, ClientboundBlockEventPacket::getPos);
+		blockpos(ClientboundBlockDestructionPacket.class, 1, ClientboundBlockDestructionPacket::getPos);
+		TABLE.put(ClientboundBlockEntityDataPacket.class, new Extractor() {
+			@Override
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				ClientboundBlockEntityDataPacket s = (ClientboundBlockEntityDataPacket) self;
+				details.collect(DetailSet.BLOCK_POS, 1, s.getPos())
+					.collect(DetailSet.BLOCK_ENTITY_TYPE, 1, s.getType());
+			}
 		});
-		mkDecorate(ClientboundBlockDestructionPacket.class, (p, data) -> data.put("pos", p.getPos().toShortString()));
 		
 		//entity stuff
-		//TODO: show the position (maybe rounded so it doesn't break collation too much)
-		mkDecorate(ClientboundMoveEntityPacket.Pos.class   , (p, data) -> data.put("type", entityId(p::getEntity)));
-		mkDecorate(ClientboundMoveEntityPacket.PosRot.class, (p, data) -> data.put("type", entityId(p::getEntity)));
-		mkDecorate(ClientboundMoveEntityPacket.Rot.class   , (p, data) -> data.put("type", entityId(p::getEntity)));
-		mkDecorate(ClientboundEntityEventPacket.class      , (p, data) -> data.put("type", entityId(p::getEntity)));
-		mkDecorate(ClientboundRotateHeadPacket.class       , (p, data) -> data.put("type", entityId(p::getEntity)));
-		mkDecorate(ClientboundTeleportEntityPacket.class   , (p, data) -> data.put("type", entityId2(p.getId())));
-		mkDecorate(ClientboundSetEntityDataPacket.class    , (p, data) -> data.put("type", entityId2(p.id())));
-		mkDecorate(ClientboundSetEntityMotionPacket.class  , (p, data) -> data.put("type", entityId2(p.getId())));
+		entityGetter(ClientboundMoveEntityPacket.Pos.class   , 1, p -> p::getEntity);
+		entityGetter(ClientboundMoveEntityPacket.PosRot.class, 1, p -> p::getEntity);
+		entityGetter(ClientboundMoveEntityPacket.Rot.class   , 1, p -> p::getEntity);
+		entityGetter(ClientboundEntityEventPacket.class      , 1, p -> p::getEntity);
+		entityGetter(ClientboundRotateHeadPacket.class       , 1, p -> p::getEntity);
+		entityId(ClientboundTeleportEntityPacket.class , 1, ClientboundTeleportEntityPacket::getId);
+		entityId(ClientboundSetEntityDataPacket.class  , 1, ClientboundSetEntityDataPacket::id);
+		entityId(ClientboundSetEntityMotionPacket.class, 1, ClientboundSetEntityMotionPacket::getId);
 		
 		//misc
-		mkDecorate(ClientboundSoundPacket.class, (p, data) -> {
-			data.put("x", Double.toString(p.getX()));
-			data.put("y", Double.toString(p.getY()));
-			data.put("z", Double.toString(p.getZ()));
-		});
-	}
-	
-	public static <T extends Packet<?>> void mkDecorate(Class<T> classs, BiConsumer<T, Map<String, String>> decorator) {
-		TABLE.put(classs, new Extractor() {
+		TABLE.put(ClientboundSoundPacket.class, new Extractor() {
 			@Override
-			public void ping5$decorate(Object self, Map<String, String> data) {
-				decorator.accept((T) self, data);
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				ClientboundSoundPacket s = (ClientboundSoundPacket) self;
+				
+				details.collect("type", 1, ExtractorUtils.soundEventId(s.getSound()))
+					.collect("x", 2, s.getX())
+					.collect("y", 2, s.getY())
+					.collect("z", 2, s.getZ());
 			}
 		});
 	}
 	
-	//TODO: doesn't seem to be reliable pre-JOIN
-	public static Level tryToGetLevel() {
-		MultiPlayerGameMode gm = Minecraft.getInstance().gameMode;
-		if(gm == null) return null;
-		
-		ClientPacketListener pl = ((MultiPlayerGameModeAccessor) gm).ping5$connection();
-		if(pl == null) return null;
-		
-		return pl.getLevel();
+	public static <T extends Packet<?>> void blockpos(Class<T> classs, int level, Function<T, BlockPos> posGetter) {
+		TABLE.put(classs, new Extractor() {
+			@Override
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				details.collect(DetailSet.BLOCK_POS, level, posGetter.apply((T) self));
+			}
+		});
 	}
 	
-	public static String entityId(Function<Level, Entity> getter) {
-		Level l = tryToGetLevel();
-		if(l == null) return "<no level>";
-		
-		Entity e = getter.apply(tryToGetLevel());
-		if(e == null) return "<no entity?>";
-		
-		return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
+	public static <T extends Packet<?>> void entityGetter(Class<T> classs, int level, Function<T, Function<? super Level, ? extends Entity>> getterGetter) {
+		TABLE.put(classs, new Extractor() {
+			@Override
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				details.collect(DetailSet.ENTITY_FROM_ENTITY_GETTER, level, getterGetter.apply((T) self));
+			}
+		});
 	}
 	
-	public static String entityId2(int id) {
-		Level l = tryToGetLevel();
-		if(l == null) return "<no level>";
-		
-		Entity e = l.getEntity(id);
-		if(e == null) return "<no entity?>";
-		
-		return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString();
-	}
-	
-	public static String type(BlockEntityType<?> t) {
-		ResourceLocation rl = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(t);
-		if(rl == null) return "<unregistered>";
-		else return rl.toString();
+	public static <T extends Packet<?>> void entityId(Class<T> classs, int level, ToIntFunction<T> entityId) {
+		TABLE.put(classs, new Extractor() {
+			@Override
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				details.collect(DetailSet.ENTITY_FROM_ID, level, entityId.applyAsInt((T) self));
+			}
+		});
 	}
 }

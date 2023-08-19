@@ -1,9 +1,6 @@
 package agency.highlysuspect.pingpingpingpingping;
 
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
 
 //TODO: make it composable
 public interface Extractor {
@@ -11,13 +8,8 @@ public interface Extractor {
 		return DefaultNameTable.TABLE.get(self.getClass());
 	}
 	
-	default void ping5$decorate(Object self, Map<String, String> data) {
+	default void ping5$fillDetails(Object self, DetailSet details) {
 	
-	}
-	
-	//todo; highlight position in-world or something
-	default @Nullable Vec3 ping5$extractPos(Object self) {
-		return null;
 	}
 	
 	static Extractor get(Object a) {

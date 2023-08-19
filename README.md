@@ -16,6 +16,10 @@ Packets are tracked by class name (vanilla names get reobfuscated to their mojan
 * Track outgoing c2s packets
 * Server-side version, to track incoming c2s packets and maybe attribute them to players
 
+I honestly want to investigate a more heavyweight database solution as well (h2 or something) to allow for interesting queries and reports to be done
+
+Basically i have some fuckin IDEAS but im just quickly hacking things together right now
+
 ## what does is the networking
 
 ConnectScreen is what starts the actual multiplayer connection

@@ -32,14 +32,6 @@ public class PingPingPingPingPing implements ClientModInitializer {
 	
 	public static volatile PacketRecorder recorder = new PacketRecorder();
 	
-	private static void send(CommandContext<FabricClientCommandSource> s, String msg) {
-		send(s, Component.literal(msg));
-	}
-	
-	private static void send(CommandContext<FabricClientCommandSource> s, Component msg) {
-		s.getSource().sendFeedback(msg);
-	}
-	
 	@Override
 	public void onInitializeClient() {
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, reg) -> {
@@ -64,22 +56,37 @@ public class PingPingPingPingPing implements ClientModInitializer {
 					return 0;
 				}))
 				.then(ClientCommandManager.literal("info").executes(src -> {
-					send(src, CAPTURING ?
-						"Capturing packets. Use \u00a77/pingpingpingpingping stop\u00a7r to finish and save report" :
-						"Not capturing packets. Use \u00a77/pingpingpingpingping start\u00a7r to begin.");
-					if(CAPTURING && recorder != null) {
-						int packets = recorder.getRecvCount();
+					if(CAPTURING) {
 						long seconds = Duration.between(recorder.getStart(), Instant.now()).toSeconds();
 						
-						send(src, "Captured \u00a77" + packets + "\u00a7r packets over \u00a77" + seconds + "\u00a7r seconds.");
-						send(src, "That's about \u00a77" + formatPacketsPerSecond(packets, seconds) + "\u00a7r packets/sec.");
+						send(src, "Capturing packets for " + seconds + " seconds.");
+						send(src, "Use \u00a77/pingpingpingpingping stop\u00a7r to finish and save report.");
+						
+						if(recorder != null) {
+							int recv = recorder.getReceivedCount();
+							send(src, "Received \u00a77" + recv + "\u00a7r packets (\u00a77" + formatPacketsPerSecond(recv, seconds) + "\u00a7r per second)");
+							
+							int sent = recorder.getSentCount();
+							send(src, "Sent \u00a77" + sent + "\u00a7r packets (\u00a77" + formatPacketsPerSecond(sent, seconds) + "\u00a7r per second)");
+						}
+					} else {
+						send(src, "Not capturing packets. Use \u00a77/pingpingpingpingping start\u00a7r to begin.");
 					}
+					
 					return 0;
 				}));
 			
 			LiteralCommandNode<FabricClientCommandSource> p = dispatcher.register(ppppp);
 			dispatcher.register(ClientCommandManager.literal("ping5").redirect(p));
 		});
+	}
+	
+	private static void send(CommandContext<FabricClientCommandSource> s, String msg) {
+		send(s, Component.literal(msg));
+	}
+	
+	private static void send(CommandContext<FabricClientCommandSource> s, Component msg) {
+		s.getSource().sendFeedback(msg);
 	}
 	
 	public void startCapturing() {
@@ -97,9 +104,8 @@ public class PingPingPingPingPing implements ClientModInitializer {
 	private static final Pattern NOT_FILENAME_SAFE = Pattern.compile("[^a-zA-Z0-9.-]");
 	
 	public Path saveReport() {
-		
-		List<String> out = new ArrayList<>();
-		recorder.printReport(out::add);
+		List<String> report = new ArrayList<>();
+		recorder.printReport(report::add);
 		
 		Path p = FabricLoader.getInstance()
 			.getGameDir()
@@ -107,7 +113,7 @@ public class PingPingPingPingPing implements ClientModInitializer {
 			.resolve(NOT_FILENAME_SAFE.matcher("report-" + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + ".txt").replaceAll(""));
 		try {
 			Files.createDirectories(p.getParent());
-			Files.write(p, out, StandardCharsets.UTF_8);
+			Files.write(p, report, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			LOGGER.error("Failed to write report", e);
 			throw new RuntimeException(e);

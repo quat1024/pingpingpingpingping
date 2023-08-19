@@ -17,8 +17,8 @@ public abstract class ConnectionMixin {
 	
 	@Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"))
 	private void pingpingpingpingping$onPacket(ChannelHandlerContext bla, Packet<?> packet, CallbackInfo ci) {
-		if(!PingPingPingPingPing.CAPTURING || getReceiving() != PacketFlow.CLIENTBOUND) return;
+		if(!PingPingPingPingPing.CAPTURING) return;
 		
-		PingPingPingPingPing.recorder.record(packet);
+		PingPingPingPingPing.recorder.record(packet, getReceiving());
 	}
 }
