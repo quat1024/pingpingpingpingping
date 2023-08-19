@@ -14,9 +14,9 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -37,8 +37,21 @@ public class DefaultExtractorTable {
 			
 			@Override
 			public void ping5$fillDetails(Object self, DetailSet details) {
-				Extractor next = DefaultCustomPayloadExtractorTable.TABLE.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
+				Extractor next = DefaultCustomPayloadExtractorTable.INCOMING.get(((ClientboundCustomPayloadPacket) self).getIdentifier());
 				if(next != null) next.ping5$fillDetails(self, details);
+			}
+		});
+		
+		TABLE.put(ServerboundCustomPayloadPacket.class, new Extractor() {
+			@Override
+			public @Nullable String ping5$name(Object self) {
+				return "ServerboundCustomPayloadPacket " + ((ServerboundCustomPayloadPacket) self).getIdentifier();
+			}
+			
+			@Override
+			public void ping5$fillDetails(Object self, DetailSet details) {
+				//TODO
+				Extractor.super.ping5$fillDetails(self, details);
 			}
 		});
 		

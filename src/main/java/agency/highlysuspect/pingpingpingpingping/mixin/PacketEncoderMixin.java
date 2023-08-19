@@ -7,7 +7,6 @@ import net.minecraft.network.ConnectionProtocol;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.PacketEncoder;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketFlow;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,10 +24,10 @@ public class PacketEncoderMixin {
 		),
 		locals = LocalCapture.CAPTURE_FAILSOFT
 	)
-	public void aklsdklasd(ChannelHandlerContext channelHandlerContext, Packet<?> packet, ByteBuf byteBuf, CallbackInfo ci, ConnectionProtocol prot, int begin, FriendlyByteBuf buf2, int end) {
+	public void ping5$sizeOutgoingPackets(ChannelHandlerContext channelHandlerContext, Packet<?> packet, ByteBuf byteBuf, CallbackInfo ci, ConnectionProtocol prot, int begin, FriendlyByteBuf buf2, int end) {
 		if(!PingPingPingPingPing.CAPTURING) return;
 		
 		//maybe these locals are named wrong, but yeah, without the abs i do record sizes with the wrong sign
-		PingPingPingPingPing.recorder.record(packet, PacketFlow.SERVERBOUND, Math.abs(end - begin));
+		PingPingPingPingPing.SENT_PACKET_SIZES.put(packet, Math.abs(end - begin));
 	}
 }

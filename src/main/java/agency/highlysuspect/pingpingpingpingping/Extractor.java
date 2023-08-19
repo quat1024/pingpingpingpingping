@@ -21,7 +21,7 @@ public interface Extractor {
 		return DefaultExtractor.INSTANCE;
 	}
 	
-	static class DefaultExtractor implements Extractor {
+	class DefaultExtractor implements Extractor {
 		public static final DefaultExtractor INSTANCE = new DefaultExtractor();
 	}
 }

@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+//TODO can this be handled somewhere else, bundle packets are weird
+// lotsa packet stuff seems to happen in net.minecraft.network.protocol.BundlerInfo
 @Mixin(ClientPacketListener.class)
 public class ClientPacketListenerMixin {
 	@Inject(method = "handleBundlePacket", at = @At("HEAD"))

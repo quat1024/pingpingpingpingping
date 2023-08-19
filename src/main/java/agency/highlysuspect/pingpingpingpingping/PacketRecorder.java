@@ -1,5 +1,6 @@
 package agency.highlysuspect.pingpingpingpingping;
 
+import agency.highlysuspect.pingpingpingpingping.weirder.WeightedFrequencyTable;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -120,32 +121,36 @@ public class PacketRecorder {
 		
 		private final String name;
 		
-		private final AtomicInteger count = new AtomicInteger(0);
-		private final AtomicInteger size = new AtomicInteger(0);
+		private final WeightedFrequencyTable<DetailSet> freq = new WeightedFrequencyTable<>();
 		private final AtomicInteger unknownSizeCount = new AtomicInteger(0);
-		private final ConcurrentHashMap<DetailSet, AtomicInteger> seenDetails = new ConcurrentHashMap<>();
 		
 		public void record(Object packet, Extractor ex, int size) {
-			count.incrementAndGet();
-			
-			this.size.addAndGet(size);
 			if(size == 0) unknownSizeCount.incrementAndGet();
 			
 			DetailSet details = new DetailSet();
 			ex.ping5$fillDetails(packet, details);
-			seenDetails.computeIfAbsent(details, __ -> new AtomicInteger(0)).incrementAndGet();
+			freq.add(details, size);
 		}
 		
-		//comparison is done in reverse
+		public int totalCount() {
+			return freq.totalFrequency();
+		}
+		
+		public int totalSize() {
+			return freq.totalWeight();
+		}
+		
+		//first compare by weight (packet size) then by raw packet count
 		@Override
 		public int compareTo(@NotNull PacketRecorder.Data o) {
-			int bySize = Integer.compare(o.size.getAcquire(), size.getAcquire());
+			int bySize = Integer.compare(o.totalSize(), totalSize());
 			if(bySize != 0) return bySize;
-			else return Integer.compare(o.count.getAcquire(), count.getAcquire());
+			else return Integer.compare(o.totalCount(), totalCount());
 		}
 		
 		public void breakdown(Consumer<String> out, int maxLevel) {
-			int size = this.size.getAcquire();
+			int count = freq.totalFrequency();
+			int size = freq.totalWeight();
 			int unknownSizeCount = this.unknownSizeCount.get();
 			
 			StringBuilder oho = new StringBuilder();
@@ -159,11 +164,11 @@ public class PacketRecorder {
 			
 			//trim details to the desired max level, accumulating frequencies
 			Map<DetailSet, MutableInt> trimmedDetailFrequencies = new HashMap<>();
-			for(Map.Entry<DetailSet, AtomicInteger> entry : seenDetails.entrySet()) {
+			freq.streamByFrequency().forEach(entry -> {
 				DetailSet trim = entry.getKey().trimTo(maxLevel);
-				int frequency = entry.getValue().get();
+				int frequency = entry.getValue();
 				trimmedDetailFrequencies.computeIfAbsent(trim, __ -> new MutableInt(0)).add(frequency);
-			}
+			});
 			
 			//remove any blanks
 			trimmedDetailFrequencies.keySet().removeIf(DetailSet::isEmpty);
@@ -180,7 +185,7 @@ public class PacketRecorder {
 		}
 		
 		public int maxDetail() {
-			return seenDetails.keySet().stream().map(DetailSet::maxDetail).max(Integer::compareTo).orElse(0);
+			return freq.keySet().stream().map(DetailSet::maxDetail).max(Integer::compareTo).orElse(0);
 		}
 	}
 }

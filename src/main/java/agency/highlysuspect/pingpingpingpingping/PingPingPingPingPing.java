@@ -36,11 +36,10 @@ public class PingPingPingPingPing implements ClientModInitializer {
 	
 	//awkward situation: Packet is an interface and not a concrete class, so I can't slap a "size" field on it
 	//and packets do not go down the pipeline one-at-a-time in order
-	public static final Cache<Packet<?>, Integer> PACKET_SIZES = CacheBuilder.newBuilder()
-		.weakKeys()
-		.concurrencyLevel(10)
-		.expireAfterWrite(5, TimeUnit.SECONDS)
-		.build();
+	public static final Cache<Packet<?>, Integer> RECEIVED_PACKET_SIZES = CacheBuilder.newBuilder()
+		.weakKeys().concurrencyLevel(10).expireAfterWrite(5, TimeUnit.SECONDS).build();
+	public static final Cache<Packet<?>, Integer> SENT_PACKET_SIZES = CacheBuilder.newBuilder()
+		.weakKeys().concurrencyLevel(10).expireAfterWrite(5, TimeUnit.SECONDS).build();
 	
 	public static volatile PacketRecorder recorder = new PacketRecorder();
 	

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+//TODO: i imagine equals/hashcode are pretty spicy on this one, maybe cache it
 public class DetailSet {
 	record Datum(int level, String value) {}
 	private final Map<String, Datum> datums = new ConcurrentHashMap<>();
@@ -55,11 +56,11 @@ public class DetailSet {
 		return datums.hashCode();
 	}
 	
-	//TODO: remove this?
-	
 	public <T> DetailSet collect(Key<T> key, int level, T value) {
 		return collect(key.name(), level, key.toString(value));
 	}
+	
+	public static Key<String> NAME = Key.make("name");
 	
 	public static Key<BlockPos> BLOCK_POS = Key.make("pos", BlockPos::toShortString);
 	public static Key<BlockEntityType<?>> BLOCK_ENTITY_TYPE = Key.make("be", ExtractorUtils::blockEntityTypeName);
