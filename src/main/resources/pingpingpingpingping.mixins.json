@@ -8,7 +8,9 @@
 		"ClientboundSectionBlocksUpdatePacketMixin",
 		"MultiPlayerGameModeAccessor",
 		"PacketDecoderMixin",
-		"PacketEncoderMixin"
+		"PacketEncoderMixin",
+		"spec.PlayerRendererMixin",
+		"spec.EntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

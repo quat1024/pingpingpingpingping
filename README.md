@@ -8,6 +8,8 @@ Run the client command `/pingpingpingpingping start` to start logging packets, r
 
 Packets are tracked by class name (vanilla names get reobfuscated to their mojang name). Some packets have "extractors" that provide additional context for each packet (for an entity update: which entity was updating, e.g.)
 
+(random unrelated feature) - `/pspec` toggles the translucent visibility of invisible things (players, armorstands, etc) in spectator mode. intended for a cleaner video recording
+
 ## Wishlist
 
 * The extractor api is fucking terrible and hard to compose, some sort of "decorator" style api (all packets pass through all decorators) might b better

@@ -31,6 +31,9 @@ import java.util.regex.Pattern;
 public class PingPingPingPingPing implements ClientModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("PingPingPingPingPing");
 	
+	//random features not related to packet capturing !!!
+	public static boolean HIDE_SPECTATORS = false;
+	
 	//this field is read *very* often but doesnt change a lot. hmm
 	public static volatile boolean CAPTURING = false;
 	
@@ -89,6 +92,16 @@ public class PingPingPingPingPing implements ClientModInitializer {
 			
 			LiteralCommandNode<FabricClientCommandSource> p = dispatcher.register(ppppp);
 			dispatcher.register(ClientCommandManager.literal("ping5").redirect(p));
+			
+			//toggling visibility of spectators
+			dispatcher.register(ClientCommandManager.literal("pspec")
+				.executes(src -> {
+					HIDE_SPECTATORS ^= true;
+					if(HIDE_SPECTATORS) send(src, "Other spectators §7hidden§r while in spectator mode");
+					else send(src, "Other spectators §7visible again§r while in spectator mode");
+					
+					return 0;
+				}));
 		});
 	}
 	
