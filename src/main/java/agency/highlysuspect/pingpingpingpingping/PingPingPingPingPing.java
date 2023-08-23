@@ -32,7 +32,7 @@ public class PingPingPingPingPing implements ClientModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger("PingPingPingPingPing");
 	
 	//this field is read *very* often but doesnt change a lot. hmm
-	public static boolean CAPTURING = false;
+	public static volatile boolean CAPTURING = false;
 	
 	//awkward situation: Packet is an interface and not a concrete class, so I can't slap a "size" field on it
 	//and packets do not go down the pipeline one-at-a-time in order

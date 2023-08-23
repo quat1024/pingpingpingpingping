@@ -10,11 +10,9 @@ Packets are tracked by class name (vanilla names get reobfuscated to their mojan
 
 ## Wishlist
 
-* The extractor api is fucking terrible and hard to compose, some sort of "decorator" style api (all packets pass through all decorators) would be a million times better
+* The extractor api is fucking terrible and hard to compose, some sort of "decorator" style api (all packets pass through all decorators) might b better
   * It's also annoying to have to strike a balance between "capturing enough data to be useful in the packet" and "breaking the collation algorithm so you get 1000 packets all seen 1 time each" need to Re think that as well
-  * it's 2am gimme a break
-* Track outgoing c2s packets
-* Server-side version, to track incoming c2s packets and maybe attribute them to players
+  * it's 2am and ive been Suffering from chronic sleepiness sorry
 
 I honestly want to investigate a more heavyweight database solution as well (h2 or something) to allow for interesting queries and reports to be done
 

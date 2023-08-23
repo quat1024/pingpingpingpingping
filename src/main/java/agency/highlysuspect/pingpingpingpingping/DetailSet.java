@@ -56,6 +56,8 @@ public class DetailSet {
 		return datums.hashCode();
 	}
 	
+	/// key api
+	
 	public <T> DetailSet collect(Key<T> key, int level, T value) {
 		return collect(key.name(), level, key.toString(value));
 	}
