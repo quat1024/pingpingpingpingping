@@ -15,15 +15,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class PlayerRendererMixin {
 	@Inject(method = "setModelProperties", at = @At("RETURN"))
 	private void ping5spec$whenSettingModelProps(AbstractClientPlayer abstractClientPlayer, CallbackInfo ci) {
-		if(PingPingPingPingPing.HIDE_SPECTATORS && abstractClientPlayer.isSpectator()) {
+		if(PingPingPingPingPing.HIDE_SPECTATORS && isSpecOrInvis(abstractClientPlayer)) {
 			((PlayerRenderer) (Object) this).getModel().setAllVisible(false);
 		}
 	}
 	
 	@Inject(method = "renderNameTag(Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/network/chat/Component;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
 	private void ping5spec$whenNametag(AbstractClientPlayer abstractClientPlayer, Component component, PoseStack poseStack, MultiBufferSource multiBufferSource, int i, CallbackInfo ci) {
-		if(PingPingPingPingPing.HIDE_SPECTATORS && abstractClientPlayer.isSpectator()) {
+		if(PingPingPingPingPing.HIDE_SPECTATORS && isSpecOrInvis(abstractClientPlayer)) {
 			ci.cancel();
 		}
+	}
+	
+	private static boolean isSpecOrInvis(AbstractClientPlayer p) {
+		return p != null && (p.isSpectator() || p.isInvisible());
 	}
 }

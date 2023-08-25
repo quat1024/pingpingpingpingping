@@ -28,7 +28,7 @@ public class EntityMixin {
 			
 			Entity other = (Entity) (Object) this;
 			if(other instanceof Player) {
-				if(other.isSpectator()) cir.setReturnValue(true);
+				if(other.isSpectator() || other.isInvisible()) cir.setReturnValue(true);
 			} else {
 				cir.setReturnValue(true);
 			}
